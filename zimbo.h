@@ -10,7 +10,9 @@
 #include <limits.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 #define MAX_LINE 2048
 #define ZIMBO_DELIM " \t\r\n\a"
+char **zimbo_split(char *string);
 
 #endif
