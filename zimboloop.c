@@ -23,7 +23,7 @@ int main(int argc, char **argv, char **envp)
 		if (i != -1)
 		{
 			k = getline(&input, &size, stdin);
-			//if (k != -1)
+			if (k != -1)
 			{
 				toks = zimbo_split(input);
 			//else
