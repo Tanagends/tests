@@ -15,15 +15,15 @@ int main(int argc, char **argv, char **envp)
 	char *input, **toks;
 	size_t size = 0;
 	ssize_t i, k;
-	int status;
+	int status = 1;
 
 	while (1)
 	{
-		write(1, "Zimboshell$ ", 12);
+		i = write(1, "Zimboshell$ ", 12);
 		if (i != -1)
 		{
 			k = getline(&input, &size, stdin);
-			if (k != -1)
+			//if (k != -1)
 			{
 				toks = zimbo_split(input);
 			//else
@@ -91,10 +91,10 @@ int zimbo_execute(char **toks)
 				if (execve(path_handler, toks, environ) == -1)
 				{
 					perror(toks[0]);
-					free(path_handler);
+				//	free(path_handler);
 					exit(errno);
 				}
-				free(path_handler);
+				//free(path_handler);
 			}
 			else
 			{
@@ -111,6 +111,8 @@ int zimbo_execute(char **toks)
 		else
 			perror("fork error"); //If fork fails
 	}
+	else
+		return 1;
 	return (1);
 }
 /**
