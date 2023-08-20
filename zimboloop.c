@@ -3,7 +3,7 @@
  * main - a simple shell
  * Return: 0(Always success).
  */
-char *builtstr = {"cd", "setenv", "env", "exit"};
+char *builtstr[] = {"cd", "setenv", "env", "exit"};
 int (*builtfunc[])(char **toks) = {zimbo_cd, zimbo_setenv, zimbo_env, zimbo_exit};
 // command prompt duplicating upon null input
 // double free error
@@ -17,7 +17,7 @@ int main(int argc, char **argv, char **envp)
 	ssize_t i, k;
 	int status = 1;
 
-	while (1)
+	while (status)
 	{
 		write(1, "Zimboshell$ ", 12);
 		//if (i != -1)
@@ -80,7 +80,7 @@ int zimbo_execute(char **toks)
 		return (1);
 	builtins = zimbo_builtins(toks);
 	if (builtins != -1)
-		return(zimbo_builtins(toks));
+		return (builtins);
 	path_handler = zimbo_path__handler(toks);//remember to free path handler
 	if (path_handler != NULL || access(toks[0], X_OK) == 0)
 	{
@@ -169,7 +169,7 @@ int zimbo_builtins(char **toks)
 	for (i = 0; i < 4; i++)
 	{
 		if (strcmp(builtstr[i], toks[0]) == 0)
-			return (int (*builtfunc[i])(char **toks);
+			return ((*builtfunc[i])(toks));
 	}
 	return (-1);
 }
@@ -181,6 +181,11 @@ int zimbo_exit(char **toks)
 {
 	return (0);
 }
+/**
+ * zimbo_cd - changes directory.
+ * @toks: tokenized input.
+ * Return: 1 (Success)
+ */
 int zimbo_cd(char **toks)
 {
 	int i;
@@ -199,6 +204,11 @@ int zimbo_cd(char **toks)
 		return (1);
 	}
 }
+/**
+ * zimbo_env - prints environment variables.
+ * @toks: tokenized input.
+ * Return: 1 (Success).
+ */
 int zimbo_env(char **toks)
 {
 	int i = 0;
@@ -213,6 +223,11 @@ int zimbo_env(char **toks)
 	}
 	return (1);
 }
+/**
+ * zimbo_setenv - sets environment variables.
+ * @toks: tokenized input.
+ * Return: Always 1 (Success).
+ */
 int zimbo_setenv(char **toks)
 {
 	int i;
