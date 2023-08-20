@@ -3,12 +3,12 @@
  * main - a simple shell
  * Return: 0(Always success).
  */
-//char *builtstr = {"cd", "setenv", "env", "exit"};
-//int (*builtfunc[])(char **toks) = {zimbo_cd, zimbo_setenv, zimbo_env, 
-//	zimbo_exit};
+char *builtstr = {"cd", "setenv", "env", "exit"};
+int (*builtfunc[])(char **toks) = {zimbo_cd, zimbo_setenv, zimbo_env, zimbo_exit};
 // command prompt duplicating upon null input
 // double free error
 // error messages
+// executing a command only on the first prompt
 extern char** environ;
 int main(int argc, char **argv, char **envp)
 {
@@ -19,12 +19,12 @@ int main(int argc, char **argv, char **envp)
 
 	while (1)
 	{
-		i = write(1, "Zimboshell$ ", 12);
-		if (i != -1)
-		{
-			k = getline(&input, &size, stdin);
-			if (k != -1)
-			{
+		write(1, "Zimboshell$ ", 12);
+		//if (i != -1)
+	//	{
+			getline(&input, &size, stdin);
+		//	if (k != -1)
+		//	{
 				toks = zimbo_split(input);
 			//else
 			//	printf("Error\n");
@@ -32,10 +32,10 @@ int main(int argc, char **argv, char **envp)
 				status = zimbo_execute(toks);
 				//free(input);
 				free(toks);
-			}
-			else if (input == "\n")
-				write(1, "\n", 1);
-		}
+		//	}
+			//else if (input == "\n")
+			//	write(1, "\n", 1);
+		//}
 	}
 	return 0;
 }
@@ -74,10 +74,13 @@ int zimbo_execute(char **toks)
 	pid_t _pid;
 	int status;
 	char *path_handler = NULL;
+	int builtins = -1;
 
 	if (toks[0] == NULL)
 		return (1);
-	//handle inbuilt
+	builtins = zimbo_builtins(toks);
+	if (builtins != -1)
+		return(zimbo_builtins(toks));
 	path_handler = zimbo_path__handler(toks);//remember to free path handler
 	if (path_handler != NULL || access(toks[0], X_OK) == 0)
 	{
@@ -112,7 +115,7 @@ int zimbo_execute(char **toks)
 			perror("fork error"); //If fork fails
 	}
 	else
-		return 1;
+		perror(toks[0]);
 	return (1);
 }
 /**
@@ -154,4 +157,86 @@ char *zimbo_path__handler(char **toks)
 		}
 	}
 	return (NULL);
+}
+/**
+ * zimbo_builtins - checks and execute builtins.
+ * @toks: tokenized string.
+ */
+int zimbo_builtins(char **toks)
+{
+	int i;
+
+	for (i = 0; i < 4; i++)
+	{
+		if (strcmp(builtstr[i], toks[0]) == 0)
+			return (int (*builtfunc[i])(char **toks);
+	}
+	return (-1);
+}
+/**
+ * exit - exits the shell.
+ * Return: 0 (Success)
+ */
+int zimbo_exit(char **toks)
+{
+	return (0);
+}
+int zimbo_cd(char **toks)
+{
+	int i;
+
+	if (toks[2] != NULL)
+	{
+		printf("Too many arguments");
+		return (1);
+	}
+	i = chdir(toks[1]);
+	if (i == 0)
+		return (1);
+	else
+	{
+		perror(toks[1]);
+		return (1);
+	}
+}
+int zimbo_env(char **toks)
+{
+	int i = 0;
+
+	if (toks[1] != NULL)
+		return (1);
+	while (environ[i] != NULL)
+	{
+		write(1, environ[i], strlen(environ[i]));
+		write(1, "\n", 1);
+		i++;
+	}
+	return (1);
+}
+int zimbo_setenv(char **toks)
+{
+	int i;
+	char new_env[MAX_LINE];
+	char *new_envp;
+
+	if (toks[3] != NULL)
+	{
+		printf("Too many arguments");
+		return (1);
+	}
+	while (environ[i] != NULL)
+		i++;
+	strcpy(new_env, toks[1]);
+	strcat(new_env, "=");
+	strcat(new_env, toks[2]);
+	new_envp = malloc(strlen(new_env) + 1);
+	if (new_envp == NULL)
+	{
+		perror("malloc");
+		return (1);
+	}
+	strcpy(new_envp, new_env);
+	environ[i] = new_envp;
+	environ[i + 1] = NULL;
+	return (1);
 }
