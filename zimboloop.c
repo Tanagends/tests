@@ -3,8 +3,9 @@
  * main - a simple shell
  * Return: 0(Always success).
  */
-char *builtstr[] = {"cd", "setenv", "env", "exit"};
-int (*builtfunc[])(char **toks) = {zimbo_cd, zimbo_setenv, zimbo_env, zimbo_exit};
+char *builtstr[] = {"cd", "setenv", "env", "exit", "unsetenv"};
+int (*builtfunc[])(char **toks) = {zimbo_cd, zimbo_setenv, zimbo_env,
+	zimbo_exit, zimbo_unset_env};
 // command prompt duplicating upon null input
 // double free error
 // error messages
@@ -198,12 +199,16 @@ int zimbo_exit(char **toks)
  */
 int zimbo_cd(char **toks)
 {
-	int i;
+	int i, k = 0;
+	char owd[MAX_LINE], pwd[MAX_LINE], nwd[MAX_LINE];
 
-	if (toks[1] == NULL)
+	if (getcwd(pwd, sizeof(pwd)) == NULL)
 	{
-		
-		i = chdir(~);
+		perror("getcwd error");
+		return (1);
+	}
+	if (toks[1] == NULL)
+		i = chdir("~");
 	else if (toks[2] != NULL)
 	{
 		printf("Too many arguments");
@@ -211,16 +216,76 @@ int zimbo_cd(char **toks)
 	}
 	else if (toks[1] == "-")
 	{
-		if (
+		i = handle_cd(toks);
+	}
 	else
 		i = chdir(toks[1]);
 	if (i == 0)
-		return (1);
-	else
 	{
+		if (getcwd(nwd, sizeof(nwd)) != NULL)
+			set_old_new_pwd(pwd, nwd);
+	}
+	else
 		perror(toks[1]);
+	return (1);
+}
+/**
+ * set_old_new_pwd - updates PWD and OLDPWD.
+ * @cwd: OLDPWD value.
+ * @nwd: PWD value.
+ */
+void set_old_new_pwd(char *pwd, char *nwd)
+{
+	char old[MAX_LINE], new[MAX_LINE], *oldp, *newp;
+
+	//memset(old, 0, sizeof(old));
+	memset(new, 0, sizeof(new));
+	//strcpy(old, "setenv OLDPWD ");
+	//strcat(old, pwd);
+	//strcat(old, "1");
+	strcpy(new, "setenv PWD ");
+        strcat(new, nwd);
+        strcat(new, "1");
+	printf("%s\n", new);
+	//oldp = malloc(strlen(old) + 1);
+	//newp = malloc(strlen(new) + 1);
+	//if (newp == NULL)
+	//{
+	//	perror("Malloc error");
+	//	return;
+	//}
+	//zimbo_setenv(zimbo_split(oldp));
+	zimbo_setenv(zimbo_split(new));
+	//free(oldp);
+	//free(newp);
+}
+/**
+ * handle_cd- - handles cd-.
+ * @toks: tokenized input.
+ * Return: 1 (Success)
+ */
+int handle_cd(char **toks)
+{
+	char *old_wd = NULL, cwd[MAX_LINE];
+	int k = 0, i;
+
+	while (environ[k] != NULL)
+	{
+		if (strncmp(environ[k], "OLDPWD=", 7) == 0)
+		{
+			old_wd = environ[k] + 7;
+			if (getcwd(cwd, sizeof(cwd)) == NULL)
+				return (1);
+			i = chdir(old_wd);
+			break;
+		}
+	}
+	if (environ[k] == NULL)
+	{
+		perror("Old directory not found");
 		return (1);
 	}
+	return (i);
 }
 /**
  * zimbo_env - prints environment variables.
@@ -246,12 +311,10 @@ int zimbo_env(char **toks)
  * @toks: tokenized input.
  * Return: Always 1 (Success).
  */
-//handle third argument.
 int zimbo_setenv(char **toks)
 {
-	int i;
-	char new_env[MAX_LINE];
-	char *new_envp;
+	int i = 0;
+	char new_env[MAX_LINE], *new_envp;
 
 	if (toks[4] != NULL)
 	{
@@ -260,8 +323,16 @@ int zimbo_setenv(char **toks)
 	}
 	while (environ[i] != NULL)
 	{
-		if (strcmp(environ[i], toks[1], strlen(toks[1])) = 0);//unfinished business
-		i++;
+		if (strncmp(environ[i++], toks[1], strlen(toks[1])) == 0)
+		{
+			if (toks[3] == 0)
+				return (1);
+			else
+			{
+				zimbo_unset_env(toks);
+				break;
+			}
+		}
 	}
 	strcpy(new_env, toks[1]);
 	strcat(new_env, "=");
@@ -275,5 +346,38 @@ int zimbo_setenv(char **toks)
 	strcpy(new_envp, new_env);
 	environ[i] = new_envp;
 	environ[i + 1] = NULL;
+	return (1);
+}
+/**
+ * zimbo_unset_env - unsets an environment variable.
+ * @toks: tokenized input.
+ * Return: integer.
+ */
+//We might need to alter the return values to match the actual return values of the actual functions.
+int zimbo_unset_env(char **toks)
+{
+	int i = 0, k = 0;
+
+	if (toks[1] == NULL)
+	{
+		perror("Command not found");
+		return (1);
+	}
+	while (environ[i] != NULL)
+	{
+		if (strncmp(environ[i], toks[1], strlen(toks[1])) == 0)
+			break;
+		i++;
+	}
+	if (environ[i] == NULL)
+	{
+		perror("Variable not found");
+		return (1);
+	}
+	while (environ[k] != NULL)
+		k++;
+	k--;
+	environ[i] = environ[k];
+	environ[k] = NULL;
 	return (1);
 }

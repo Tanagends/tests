@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-//#include <sys/type.h>
 #include <sys/wait.h>
 #include <sys/stat.h>
 #include <limits.h>
@@ -22,5 +21,8 @@ int zimbo_env(char **toks);
 int zimbo_setenv(char **toks);
 int zimbo_exit(char **toks);
 int zimbo_builtins(char **toks);
+int zimbo_unset_env(char **toks);
+void set_old_new_pwd(char *pwd, char *nwd);
+int handle_cd(char **toks);
 
 #endif
