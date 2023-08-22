@@ -24,5 +24,6 @@ int zimbo_builtins(char **toks);
 int zimbo_unset_env(char **toks);
 void set_old_new_pwd(char *pwd, char *nwd);
 int handle_cd(char **toks);
+int cd_home(void);
 
 #endif

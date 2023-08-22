@@ -200,7 +200,7 @@ int zimbo_exit(char **toks)
 int zimbo_cd(char **toks)
 {
 	int i, k = 0;
-	char owd[MAX_LINE], pwd[MAX_LINE], nwd[MAX_LINE];
+	char pwd[MAX_LINE], nwd[MAX_LINE];
 
 	if (getcwd(pwd, sizeof(pwd)) == NULL)
 	{
@@ -208,7 +208,9 @@ int zimbo_cd(char **toks)
 		return (1);
 	}
 	if (toks[1] == NULL)
-		i = chdir("~");
+	{
+		i = cd_home();
+	}
 	else if (toks[2] != NULL)
 	{
 		printf("Too many arguments");
@@ -230,43 +232,62 @@ int zimbo_cd(char **toks)
 	return (1);
 }
 /**
+ * cd_home - handles home
+ * Return: i (success).
+ */
+int cd_home(void)
+{
+	int i, k = 0;
+	char *homeDir;
+
+	while (environ[k] != NULL)
+	{
+		if (strncmp(environ[k], "HOME=", 5) == 0)
+		{
+			homeDir = environ[k] + 5;
+			i = chdir(homeDir);
+			return (i);
+		}
+		k++;
+	}
+	return (1);
+}
+/**
  * set_old_new_pwd - updates PWD and OLDPWD.
  * @cwd: OLDPWD value.
  * @nwd: PWD value.
  */
 void set_old_new_pwd(char *pwd, char *nwd)
 {
-	char old[MAX_LINE], new[MAX_LINE], *oldp, *newp;
+	char *old = NULL, *new = NULL, *oldp = NULL, *newp = NULL;
 
-	//memset(old, 0, sizeof(old));
-	memset(new, 0, sizeof(new));
-	//strcpy(old, "setenv OLDPWD ");
-	//strcat(old, pwd);
-	//strcat(old, "1");
+	strcpy(old, "setenv OLDPWD ");
+	strcat(old, pwd);
+	strcat(old, "1");
 	strcpy(new, "setenv PWD ");
         strcat(new, nwd);
         strcat(new, "1");
 	printf("%s\n", new);
-	//oldp = malloc(strlen(old) + 1);
-	//newp = malloc(strlen(new) + 1);
-	//if (newp == NULL)
-	//{
-	//	perror("Malloc error");
-	//	return;
-	//}
-	//zimbo_setenv(zimbo_split(oldp));
+	oldp = malloc(strlen(old) + 1);
+	newp = malloc(strlen(new) + 1);
+	if (newp == NULL)
+	{
+		perror("Malloc error");
+		return;
+	}
+	zimbo_setenv(zimbo_split(oldp));
 	zimbo_setenv(zimbo_split(new));
-	//free(oldp);
-	//free(newp);
+	free(oldp);
+	free(newp);
 }
 /**
- * handle_cd- - handles cd-.
+ * handle_cd - handles cd.
  * @toks: tokenized input.
  * Return: 1 (Success)
  */
 int handle_cd(char **toks)
 {
-	char *old_wd = NULL, cwd[MAX_LINE];
+	char *old_wd = NULL, *cwd = NULL;
 	int k = 0, i;
 
 	while (environ[k] != NULL)
