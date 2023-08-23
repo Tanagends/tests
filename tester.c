@@ -1,14 +1,13 @@
 #include <stdio.h>
-char *zimbo_say_something()
+int zimbo_add(int a, int b)
 {
-	int print = 1;
-	//return print;
+	return a + b;
 }
 int main()
 {
-	char *example;
+	int example;
 
-	example = zimbo_say_something();
-	printf("%s\n", example);
+	example = zimbo_add(5, 1);
+	printf("%i\n", example);
 	return 0;
 }

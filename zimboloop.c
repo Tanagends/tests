@@ -208,18 +208,14 @@ int zimbo_cd(char **toks)
 		return (1);
 	}
 	if (toks[1] == NULL)
-	{
 		i = cd_home();
-	}
 	else if (toks[2] != NULL)
 	{
-		printf("Too many arguments");
+		perror("Too many arguments");
 		return (1);
 	}
-	else if (toks[1] == "-")
-	{
+	else if (strcmp(toks[1], "-") == 0)
 		i = handle_cd(toks);
-	}
 	else
 		i = chdir(toks[1]);
 	if (i == 0)
@@ -259,8 +255,10 @@ int cd_home(void)
  */
 void set_old_new_pwd(char *pwd, char *nwd)
 {
-	char *old = NULL, *new = NULL, *oldp = NULL, *newp = NULL;
+	char old[MAX_LINE], new[MAX_LINE], *oldp, *newp;
 
+	memset(old, 0, sizeof(old));
+	memset(new, 0, sizeof(new));
 	strcpy(old, "setenv OLDPWD ");
 	strcat(old, pwd);
 	strcat(old, "1");
@@ -270,13 +268,15 @@ void set_old_new_pwd(char *pwd, char *nwd)
 	printf("%s\n", new);
 	oldp = malloc(strlen(old) + 1);
 	newp = malloc(strlen(new) + 1);
-	if (newp == NULL)
+	if (newp == NULL || oldp == NULL)
 	{
 		perror("Malloc error");
 		return;
 	}
-	zimbo_setenv(zimbo_split(oldp));
-	zimbo_setenv(zimbo_split(new));
+	strcpy(oldp, old);
+	strcpy(newp, new);
+	setenv("OLDPWD", pwd, 1);
+	setenv("PWD", nwd, 1);
 	free(oldp);
 	free(newp);
 }
@@ -296,10 +296,14 @@ int handle_cd(char **toks)
 		{
 			old_wd = environ[k] + 7;
 			if (getcwd(cwd, sizeof(cwd)) == NULL)
+			{
+				printf("%s\n", cwd);
 				return (1);
+			}
 			i = chdir(old_wd);
 			break;
 		}
+		k++;
 	}
 	if (environ[k] == NULL)
 	{
